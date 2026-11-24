@@ -1,0 +1,24 @@
+# Mapeo de variables ENEIC usadas por StatEngine.
+# Completar/ajustar cuando el equipo confirme la edición final (trimestre/año).
+
+fuente:
+  encuesta: ENEIC
+  edicion: "I 2026"   # TODO: confirmar edición definitiva
+  fecha_descarga: null  # TODO: completar al descargar
+
+base_personas:
+  ponderador: FACTOR
+  dominio: DOMINIO
+  sexo: P02A02
+  edad: P02A03
+  pet: PET
+  pea: PEA
+  ocupados: OCUPADOS
+  desocupados: DESOCUPADOS
+  inactivos: INACTIVOS
+  ingreso_laboral: YLAB_PUBLI
+  salario_bruto_crudo: P05D01
+
+etiquetas_sexo:
+  1: Hombre
+  2: Mujer

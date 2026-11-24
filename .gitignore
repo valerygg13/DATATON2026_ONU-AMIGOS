@@ -1,0 +1,22 @@
+# Datos crudos (no versionar microdatos, son pesados y se descargan de ine.gob.gt)
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Entorno / credenciales
+.env
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/

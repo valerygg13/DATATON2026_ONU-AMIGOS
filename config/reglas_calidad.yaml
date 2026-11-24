@@ -1,0 +1,19 @@
+# Reglas de DataGuard / StatShield.
+# TODO (equipo Datos/Estadística): ajustar umbrales y códigos especiales reales tras inspeccionar
+# el diccionario completo de la edición elegida.
+
+codigos_especiales:
+  no_sabe: 98
+  no_responde: 99
+
+cruces:
+  minimo_casos_no_ponderados: 30   # por debajo de esto, StatShield debe advertir o bloquear
+  desagregaciones_permitidas:
+    - sexo
+    - dominio
+  desagregaciones_bloqueadas:
+    - municipio   # el diseño muestral de ENEIC no garantiza representatividad municipal
+
+ponderador:
+  variable: FACTOR
+  requerido: true
