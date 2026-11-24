@@ -3,8 +3,9 @@
 
 fuente:
   encuesta: ENEIC
-  edicion: "I 2026"   # TODO: confirmar edición definitiva
-  fecha_descarga: null  # TODO: completar al descargar
+  edicion: "I 2026"
+  fecha_descarga: "2026-11-23"
+  url_portal: "https://www.ine.gob.gt/encuesta-nacional-de-empleo-e-ingresos/"
 
 base_personas:
   ponderador: FACTOR
@@ -22,3 +23,20 @@ base_personas:
 etiquetas_sexo:
   1: Hombre
   2: Mujer
+
+etiquetas_dominio:
+  1: Urbano Metropolitano
+  2: Resto Urbano
+  3: Rural Nacional
+
+base_hogares:
+  ponderador: FACTOR
+  dominio: DOMINIO
+  area: P00A10
+  num_hogar: NUM_HOGAR
+  # Variables de vivienda/alquiler (P01A01-P01A03) disponibles si se necesita contexto
+  # socioeconómico del hogar; no se usan en los 3 indicadores iniciales del MVP.
+
+etiquetas_area:
+  1: Urbana
+  2: Rural

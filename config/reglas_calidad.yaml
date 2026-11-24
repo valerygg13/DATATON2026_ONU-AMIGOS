@@ -1,18 +1,24 @@
-# Reglas de DataGuard / StatShield.
-# TODO (equipo Datos/Estadística): ajustar umbrales y códigos especiales reales tras inspeccionar
-# el diccionario completo de la edición elegida.
+# Reglas de DataGuard / StatShield — confirmadas contra el diccionario real de
+# ENEIC I 2026 (Hogares y Personas), descargado 2026-11-23.
 
 codigos_especiales:
-  no_sabe: 98
-  no_responde: 99
+  # El código 99 es el usado de forma consistente en el diccionario para
+  # "No sabe", "No responde", "No sabe/No responde" e "Ignorado" en las
+  # variables categóricas de la boleta. Verificar caso por caso al limpiar,
+  # porque también es un valor numérico válido en pocas variables de conteo
+  # (ej. P05C13, personas en la empresa); DataGuard debe filtrar por variable,
+  # no por un blanket "99 == missing" global.
+  no_sabe_no_responde: 99
 
 cruces:
   minimo_casos_no_ponderados: 30   # por debajo de esto, StatShield debe advertir o bloquear
   desagregaciones_permitidas:
-    - sexo
-    - dominio
+    - sexo        # P02A02: 1 Hombre, 2 Mujer
+    - dominio     # DOMINIO: 1 Urbano Metropolitano, 2 Resto Urbano, 3 Rural Nacional
+    - area        # P00A10: 1 Urbana, 2 Rural
   desagregaciones_bloqueadas:
-    - municipio   # el diseño muestral de ENEIC no garantiza representatividad municipal
+    - municipio   # ENEIC no publica dominio a nivel municipal; el diseño muestral
+                  # solo garantiza representatividad a nivel de DOMINIO (3 categorías)
 
 ponderador:
   variable: FACTOR
