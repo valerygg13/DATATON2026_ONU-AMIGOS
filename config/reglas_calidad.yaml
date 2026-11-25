@@ -9,6 +9,33 @@ codigos_especiales:
   # (ej. P05C13, personas en la empresa); DataGuard debe filtrar por variable,
   # no por un blanket "99 == missing" global.
   no_sabe_no_responde: 99
+  # Variables donde 99 NO es un valor válido y DataGuard lo convierte a NaN.
+  # Solo variables categóricas cuyo rango válido no incluye 99. No incluir
+  # YLAB_PUBLI/P05D01 (montos) ni P02A03 (edad), donde 99 puede ser legítimo.
+  aplicar_a:
+    - P02A02
+    - DOMINIO
+    - P00A10
+
+rangos_validos:
+  # DataGuard reporta (no corrige) valores fuera de rango, después de limpiar
+  # los códigos especiales.
+  P02A02: [1, 2]
+  DOMINIO: [1, 3]
+  P00A10: [1, 2]
+  P02A03: [0, 120]
+
+variables_flag:
+  # Codificación 1 = pertenece, NaN = no pertenece (ver docs/indicadores.md).
+  columnas: [PET, PEA, OCUPADOS, DESOCUPADOS, INACTIVOS]
+  subconjuntos:   # hijo: padre
+    PEA: PET
+    INACTIVOS: PET
+    OCUPADOS: PEA
+    DESOCUPADOS: PEA
+  disjuntos:
+    - [PEA, INACTIVOS]
+    - [OCUPADOS, DESOCUPADOS]
 
 cruces:
   minimo_casos_no_ponderados: 30   # por debajo de esto, StatShield debe advertir o bloquear
