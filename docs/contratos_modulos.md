@@ -25,6 +25,10 @@ data/raw/*.xlsx  →  DataGuard  →  StatEngine  →  StatShield  →  Interfaz
 **Entrada de StatEngine**: `df_limpio` de DataGuard + nombre del ponderador (`FACTOR`) +
 lista `by` de columnas de agregación (ej. `["sexo"]`, `["sexo", "dominio"]`).
 
+`by` usa nombres lógicos (`sexo`, `dominio`, `area`). `agregar_dimensiones(df_limpio, variables)`
+crea esas columnas con las etiquetas de `config/variables.yaml` (ej. `P02A02 = 1` → `"Hombre"`)
+sin modificar las columnas originales.
+
 **Salida de StatEngine**: `pandas.DataFrame` con una fila por combinación de `by`, y como mínimo
 estas columnas:
 
@@ -38,6 +42,10 @@ Esta misma forma la usan `participacion_laboral`, `ingreso_laboral_medio` y
 `brecha_relativa_ingreso` — StatShield y la Interfaz no necesitan saber cuál de los tres
 indicadores están consumiendo, solo este contrato de columnas.
 
+`brecha_relativa_ingreso` recibe la salida de `ingreso_laboral_medio` con `sexo` en `by`; su
+salida ya no tiene `sexo` (una fila por combinación de las demás dimensiones) y agrega las
+columnas informativas `media_hombres`, `media_mujeres`, `n_hombres`, `n_mujeres`.
+
 ## 3. StatShield → Interfaz
 
 **Entrada de StatShield**: el DataFrame de salida de StatEngine + `by` solicitado +
@@ -50,6 +58,11 @@ indicadores están consumiendo, solo este contrato de columnas.
   usuario, no un error genérico.
 - Agrega columna `advertencia: str | None` por fila: mensaje si
   `n_no_ponderado < minimo_casos_no_ponderados`, si no `None`.
+- Punto de entrada: `aplicar_statshield(resultado, by, reglas, suprimir_bajo_minimo=False)`.
+  Con `suprimir_bajo_minimo=True` (usado para la brecha) además pone `valor = NaN` en esas
+  filas. Las dimensiones que no están en `desagregaciones_permitidas` también se rechazan.
+- La Interfaz llama `verificar_desagregacion` **antes** de StatEngine, para no intentar
+  agrupar por columnas inexistentes (ej. `municipio`).
 
 ## 4. Interfaz → usuario
 

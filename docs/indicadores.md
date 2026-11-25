@@ -33,11 +33,16 @@ ingreso_laboral_medio = Σ(FACTOR * YLAB_PUBLI, donde OCUPADOS == 1 y YLAB_PUBLI
                          / Σ(FACTOR, donde OCUPADOS == 1 y YLAB_PUBLI no es NaN)
 ```
 
-**Decisión pendiente de validar con el equipo de Estadística**: la población elegible es
+**Implementado (Fase 2, `ingreso_laboral_medio`)**: la población elegible es
 `OCUPADOS == 1`, pero dentro de ocupados algunos no reportan ingreso laboral (`YLAB_PUBLI` NaN,
 ej. trabajador familiar no remunerado). Se excluyen del denominador explícitamente — no se
 imputan como cero, porque un cero falso infla artificialmente la brecha. Esto debe declararse
 en la ficha metodológica (campo "tratamiento de faltantes y ceros").
+
+Ceros reportados en `YLAB_PUBLI` (no NaN) **se incluyen** por defecto: son ingreso declarado.
+El parámetro `excluir_ceros=True` permite excluirlos para análisis de sensibilidad; si se usa,
+debe declararse en la ficha. Pendiente de validar con Estadística cuando se revise la base
+completa (cuántos ocupados tienen `YLAB_PUBLI == 0` vs. NaN).
 
 ## 3. Brecha relativa de ingreso
 
@@ -45,8 +50,9 @@ en la ficha metodológica (campo "tratamiento de faltantes y ceros").
 brecha_relativa = (ingreso_medio_hombres - ingreso_medio_mujeres) / ingreso_medio_hombres * 100
 ```
 
-Calculado sobre el resultado del indicador 2, agregado por `sexo`. Si `ingreso_medio_hombres`
-es 0 o el `n` no ponderado del dominio es menor al umbral de `config/reglas_calidad.yaml`
+Calculado sobre el resultado del indicador 2, agregado por `sexo`. Su `n_no_ponderado` es el
+**menor** de los dos grupos (hombres/mujeres), porque es el que limita la precisión. Si
+`ingreso_medio_hombres` es 0 o ese `n` es menor al umbral de `config/reglas_calidad.yaml`
 (`cruces.minimo_casos_no_ponderados`), el indicador no se calcula y se devuelve la advertencia
 de StatShield en su lugar.
 

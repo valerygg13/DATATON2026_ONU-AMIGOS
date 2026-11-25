@@ -12,6 +12,7 @@ base_personas:
   dominio: DOMINIO
   sexo: P02A02
   edad: P02A03
+  area: P00A10
   pet: PET
   pea: PEA
   ocupados: OCUPADOS

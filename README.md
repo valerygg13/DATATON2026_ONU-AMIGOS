@@ -45,13 +45,22 @@ python -m venv .venv
 source .venv/bin/activate  # o .venv\Scripts\activate en Windows
 pip install -r requirements.txt
 streamlit run app/app.py
+pytest                     # pruebas de DataGuard, StatEngine y StatShield
 ```
+
+La interfaz lista las bases que haya en `data/raw/` (`.sav`, `.xlsx` o `.csv` de la base
+Personas). Si no hay ninguna, ofrece un **modo demo con datos sintéticos** (`src/sintetico.py`)
+con la misma estructura y codificación de ENEIC; sus resultados no son oficiales y no deben
+publicarse.
+
+## Estado
+
+- **Fase 1** (completa): datos confirmados, fórmulas y contratos (`docs/`).
+- **Fase 2** (completa): DataGuard, StatEngine (3 indicadores), StatShield e interfaz Streamlit con filtros, tabla, gráfico, advertencias y bloqueo de desagregaciones.
 
 ## Equipo y fases de trabajo
 
-Ver [Issues](../../issues) y [Milestones](../../milestones) del repo — organizados según el
-cronograma del Datatón (23–26 nov 2026) y por rol: Datos, Estadística, Desarrollo web,
-Integración e IA.
+Ver [Issues](../../issues) y [Milestones](../../milestones) del repo — organizados según el cronograma del Datatón (23–26 nov 2026) y por rol: Datos, Estadística, Desarrollo web, Integración.
 
 ## Licencia y cumplimiento
 
