@@ -6,6 +6,9 @@ fuente:
   edicion: "I 2026"
   fecha_descarga: "2026-11-23"
   url_portal: "https://www.ine.gob.gt/encuesta-nacional-de-empleo-e-ingresos/"
+  periodo:
+    ANIO: 2026
+    TRIMESTRE: 6
 
 base_personas:
   ponderador: FACTOR

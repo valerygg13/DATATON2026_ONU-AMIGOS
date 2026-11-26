@@ -14,6 +14,7 @@ from src.statengine.indicadores import DIMENSIONES
 from src.statshield.guardrails import DesagregacionNoAutorizada
 from src.pipeline import BaseNoValida, preparar_base, ejecutar_pipeline
 from statai_panel import mostrar_statai
+from src.fuentes import preparar_archivo, huella, MAX_BYTES
 from estilos import aplicar_estilos, encabezado, portada
 
 DEMO = 'Demo — datos sintéticos (no oficiales)'
@@ -130,7 +131,7 @@ def explorador(df):
             if dim in df.columns:
                 valores = sorted(df[dim].dropna().unique())
                 filtros[dim] = st.multiselect(ETIQUETAS.get(dim, dim), valores, default=valores,
-                                                key=f'expl_{dim}_{fuente}')
+                                                key=f'expl_{dim}_{identidad_fuente}')
     if indicador == 'brecha':
         st.info(AVISO)
     try:
@@ -185,24 +186,67 @@ with st.sidebar:
     st.title('Configuración')
     st.caption('FUENTE DE INFORMACIÓN')
     archivos = sorted(p.name for p in (RAIZ/'data'/'raw').glob('*') if p.is_file() and p.suffix.lower() in ('.sav','.xlsx','.csv'))
-    fuente = st.selectbox('Base Personas', archivos+[DEMO], key='fuente', help='Coloca la base Personas de ENEIC en data/raw/.')
+    modalidad = st.radio('Origen de datos', ['Catálogo local', 'Cargar archivo', 'Modo demo'],
+                         index=0 if archivos else 2, key='modalidad_fuente')
+    archivo = None
+    if modalidad == 'Catálogo local':
+        if not archivos:
+            st.info('No hay bases locales. Utiliza Cargar archivo o Modo demo.')
+            st.stop()
+        fuente = st.selectbox('Base Personas', archivos, key='fuente')
+    elif modalidad == 'Cargar archivo':
+        st.caption('Solo archivos públicos compatibles con ENEIC I 2026. No cargues datos confidenciales.')
+        archivo = st.file_uploader('Base Personas', type=['sav', 'csv', 'xlsx'], key='archivo_personas')
+        st.caption('Máximo 50 MB. Procesamiento temporal en el servidor; sin guardado permanente intencional.')
+        if archivo is None:
+            st.session_state.pop('base_cargada', None)
+            st.info('Selecciona un archivo para comenzar.')
+            st.stop()
+        fuente = archivo.name
+    else:
+        fuente = DEMO
     st.caption('La fuente se conserva al navegar.')
 
-demo = fuente == DEMO
+demo = modalidad == 'Modo demo'
+subido = modalidad == 'Cargar archivo'
+if not subido:
+    st.session_state.pop('base_cargada', None)
 if demo:
     st.warning('Modo demo · Datos sintéticos. Los resultados no representan a Guatemala.')
 else:
     st.caption(f'Fuente seleccionada: {fuente} · Configuración ENEIC I 2026 · Ponderador: {VARIABLES["base_personas"]["ponderador"]}. Verifica la procedencia y edición.')
     st.caption('Prototipo del Datatón; los cálculos no son publicaciones oficiales del INE.')
+    if subido:
+        st.info('Archivo aportado por el usuario; procedencia oficial no verificada.')
 try:
-    version = (RAIZ/'data'/'raw'/fuente).stat().st_mtime_ns if not demo else 0
-    df, incidencias = preparar_datos(fuente, version, VARIABLES, REGLAS)
+    if subido:
+        if archivo.size > MAX_BYTES:
+            raise BaseNoValida('El archivo supera 50 MB.')
+        contenido = archivo.getvalue()
+        identidad_fuente = 'upload:' + Path(fuente).suffix.lower() + ':' + huella(contenido)
+        guardado = st.session_state.get('base_cargada')
+        if guardado is None or guardado[0] != identidad_fuente:
+            st.session_state.pop('base_cargada', None)
+            with st.spinner('Validando archivo con DataGuard...'):
+                df, incidencias = preparar_archivo(fuente, contenido, VARIABLES, REGLAS)
+            st.session_state['base_cargada'] = (identidad_fuente, df, incidencias)
+        else:
+            _, df, incidencias = guardado
+    else:
+        version = (RAIZ/'data'/'raw'/fuente).stat().st_mtime_ns if not demo else 0
+        identidad_fuente = f'local:{fuente}:{version}'
+        df, incidencias = preparar_datos(fuente, version, VARIABLES, REGLAS)
 except BaseNoValida as e:
     st.error(f'DataGuard bloqueó la base: {e}')
     st.stop()
-except (OSError, ValueError, ImportError) as e:
-    st.error(f'No se pudo cargar la base: {e}')
+except Exception as e:
+    st.error(f'No se pudo leer o validar la base ({type(e).__name__}). Verifica formato y estructura.')
     st.stop()
+if st.session_state.get('ultima_fuente_id') != identidad_fuente:
+    st.session_state.pop('ai_ultima', None)
+    st.session_state['ultima_fuente_id'] = identidad_fuente
+if subido and incidencias and pagina != 'DataGuard':
+    st.warning('La base cargada tiene incidencias. Revísalas en Calidad de datos antes de interpretar los resultados.')
 
 if pagina == 'Inicio':
     inicio(df, incidencias)
@@ -233,7 +277,7 @@ elif pagina == 'StatShield':
         except DesagregacionNoAutorizada as e:
             st.error(f'StatShield bloqueó la consulta. {e}')
     st.subheader('Reproducibilidad: tasa de participación laboral')
-    if demo or fuente != BASE_REFERENCIA:
+    if demo or subido or fuente != BASE_REFERENCIA:
         st.caption('La comparación de referencia requiere el archivo Personas ENEIC I 2026.sav identificado en el proyecto.')
     else:
         import pandas as pd
