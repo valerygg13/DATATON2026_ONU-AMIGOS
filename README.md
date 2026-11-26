@@ -11,6 +11,9 @@ Categoría 2: Tecnológica y ciencias de datos
 
 **Aplicación en línea:** [Abrir StatCore GT](https://dataton2026-onu-amigos.streamlit.app/)
 
+**Vídeo Demostrativo:** [Vídeo StatCore GT](https://drive.google.com/drive/folders/1rDYc9dwE-mseYZ9eNmW3Bi3kExXwl4qY?usp=sharing)
+
+
 ## 1. ¿Qué es StatCore GT?
 
 StatCore GT es una plataforma modular de inteligencia estadística, funcional y extensible, diseñada para automatizar el procesamiento, validación, análisis y divulgación responsable de los datos abiertos del Instituto Nacional de Estadística (INE) de Guatemala. Se presenta como un producto mínimo viable (MVP) que permite realizar análisis descriptivos reales dentro de su alcance y constituye una base para una futura adopción institucional. Integra detección de ediciones, validación de datos, cálculo ponderado, controles estadísticos, visualización interactiva, consultas en español y exportación de resultados con trazabilidad.
