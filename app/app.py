@@ -37,8 +37,11 @@ CRUCES = REGLAS['cruces']
 
 @st.cache_data(show_spinner='DataGuard está revisando la base...')
 def preparar_datos(fuente, version_archivo, variables, reglas):
-    df = generar_personas() if fuente == DEMO else cargar_base(RAIZ / 'data' / 'raw' / fuente)
-    return preparar_base(df, variables, reglas)
+    if fuente == DEMO:
+        df, incidencias = preparar_base(generar_personas(), variables, reglas)
+        return df, incidencias, variables, None
+    contenido = (RAIZ / 'data' / 'raw' / fuente).read_bytes()
+    return preparar_archivo(fuente, contenido, variables, reglas, multiperiodo=True)
 
 
 def calcular(df, indicador, by=None, filtros=None):
@@ -121,7 +124,7 @@ def explorador(df):
     with st.sidebar:
         st.divider()
         st.subheader('Configurar consulta')
-        nombre = st.selectbox('Indicador', list(INDICADORES), key='expl_indicador')
+        nombre = st.selectbox('Indicador', ['Participación laboral'] if automatico else list(INDICADORES), key='expl_indicador_auto' if automatico else 'expl_indicador')
         indicador = INDICADORES[nombre]
         opciones = list(CRUCES['desagregaciones_permitidas']) + list(CRUCES['desagregaciones_bloqueadas'])
         by = st.multiselect('Desagregar por', opciones, default=['sexo'], key='expl_by',
@@ -195,7 +198,7 @@ with st.sidebar:
             st.stop()
         fuente = st.selectbox('Base Personas', archivos, key='fuente')
     elif modalidad == 'Cargar archivo':
-        st.caption('Solo archivos públicos compatibles con ENEIC I 2026. No cargues datos confidenciales.')
+        st.caption('Archivos públicos ENEIC. Detectamos el año y código de período; ediciones nuevas se evalúan de forma experimental. No cargues datos confidenciales.')
         archivo = st.file_uploader('Base Personas', type=['sav', 'csv', 'xlsx'], key='archivo_personas')
         st.caption('Máximo 50 MB. Procesamiento temporal en el servidor; sin guardado permanente intencional.')
         if archivo is None:
@@ -214,7 +217,6 @@ if not subido:
 if demo:
     st.warning('Modo demo · Datos sintéticos. Los resultados no representan a Guatemala.')
 else:
-    st.caption(f'Fuente seleccionada: {fuente} · Configuración ENEIC I 2026 · Ponderador: {VARIABLES["base_personas"]["ponderador"]}. Verifica la procedencia y edición.')
     st.caption('Prototipo del Datatón; los cálculos no son publicaciones oficiales del INE.')
     if subido:
         st.info('Archivo aportado por el usuario; procedencia oficial no verificada.')
@@ -228,20 +230,34 @@ try:
         if guardado is None or guardado[0] != identidad_fuente:
             st.session_state.pop('base_cargada', None)
             with st.spinner('Validando archivo con DataGuard...'):
-                df, incidencias = preparar_archivo(fuente, contenido, VARIABLES, REGLAS)
-            st.session_state['base_cargada'] = (identidad_fuente, df, incidencias)
+                df, incidencias, VARIABLES, perfil = preparar_archivo(fuente, contenido, VARIABLES, REGLAS, multiperiodo=True)
+            st.session_state['base_cargada'] = (identidad_fuente, df, incidencias, VARIABLES, perfil)
         else:
-            _, df, incidencias = guardado
+            _, df, incidencias, VARIABLES, perfil = guardado
     else:
         version = (RAIZ/'data'/'raw'/fuente).stat().st_mtime_ns if not demo else 0
         identidad_fuente = f'local:{fuente}:{version}'
-        df, incidencias = preparar_datos(fuente, version, VARIABLES, REGLAS)
+        df, incidencias, VARIABLES, perfil = preparar_datos(fuente, version, VARIABLES, REGLAS)
 except BaseNoValida as e:
     st.error(f'DataGuard bloqueó la base: {e}')
     st.stop()
 except Exception as e:
     st.error(f'No se pudo leer o validar la base ({type(e).__name__}). Verifica formato y estructura.')
     st.stop()
+automatico = not demo and perfil['estado'] == 'experimental_automatico'
+if not demo:
+    st.caption(f'Fuente seleccionada: {fuente} · Perfil ENEIC {perfil["edicion"]} · Ponderador: {VARIABLES["base_personas"]["ponderador"]}. Procedencia no certificada.')
+    if perfil['estado'] == 'experimental':
+        st.warning('Perfil 2025 experimental: participación contrastada con referencias; ingresos y brechas requieren validación metodológica adicional. No interpretar como cifras oficiales ni como cambios significativos.')
+if automatico:
+    st.warning('Edición no registrada: superó controles técnicos bajo las reglas de ENEIC I 2026. No se ha confirmado su metodología, representatividad ni procedencia. Solo se habilita participación laboral exploratoria; no es una cifra oficial.')
+    autorizado = st.checkbox('Entiendo las limitaciones y deseo explorar bajo estos supuestos.', key='aceptar_'+identidad_fuente)
+    if pagina != 'DataGuard' and not autorizado:
+        st.info('Puedes revisar Calidad de datos sin aceptar los supuestos.')
+        st.stop()
+    if pagina == 'StatAI':
+        st.info('StatAI no está habilitado para ediciones sin perfil metodológico registrado.')
+        st.stop()
 if st.session_state.get('ultima_fuente_id') != identidad_fuente:
     st.session_state.pop('ai_ultima', None)
     st.session_state['ultima_fuente_id'] = identidad_fuente
@@ -277,19 +293,23 @@ elif pagina == 'StatShield':
         except DesagregacionNoAutorizada as e:
             st.error(f'StatShield bloqueó la consulta. {e}')
     st.subheader('Reproducibilidad: tasa de participación laboral')
-    if demo or subido or fuente != BASE_REFERENCIA:
-        st.caption('La comparación de referencia requiere el archivo Personas ENEIC I 2026.sav identificado en el proyecto.')
+    if demo:
+        st.caption('La comparación no está disponible para datos sintéticos.')
+    elif not perfil.get('referencia_participacion'):
+        st.info('No hay referencias registradas para esta edición. No se puede evaluar la reproducibilidad oficial.')
     else:
         import pandas as pd
         total,_ = calcular(df,'participacion')
         dominios,_ = calcular(df,'participacion',['dominio'])
         valores = dominios.set_index('dominio')['valor'].to_dict()
         valores['Nacional'] = total.iloc[0]['valor'] if not total.empty else float('nan')
-        referencia = {'Nacional':64.22,'Urbano Metropolitano':66.95,'Resto Urbano':65.48,'Rural Nacional':61.86}
-        filas = [{'Cobertura':k,'INE (%)':v,'StatCore GT (%)':round(valores.get(k,float('nan')),2),
-                  'Coincidencia a 2 decimales': 'Sí' if round(valores.get(k,float('nan')),2)==v else 'No'} for k,v in referencia.items()]
+        referencia = perfil['referencia_participacion']
+        dec = perfil['decimales_referencia']
+        filas = [{'Cobertura':k,'Referencia INE (%)':v,'StatCore GT (%)':round(valores.get(k,float('nan')),dec),
+                  f'Coincidencia a {dec} decimal(es)': 'Sí' if round(valores.get(k,float('nan')),dec)==v else 'No'} for k,v in referencia.items()]
         st.dataframe(pd.DataFrame(filas),hide_index=True,use_container_width=True)
-        st.caption('Referencia: informe ENEIC 2026, secciones 4.6 y 5.21–5.24. Comparación de estimaciones puntuales; no certifica el archivo ni la precisión muestral.')
+        st.caption(f'Perfil ENEIC {perfil["edicion"]}. Contraste numérico de estimaciones puntuales; no certifica procedencia ni precisión muestral.')
+
 else:
     mostrar_statai(df, VARIABLES, REGLAS, fuente, demo)
 
