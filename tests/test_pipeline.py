@@ -55,3 +55,22 @@ def test_pipeline_rechaza_indicador_desconocido():
     df, _ = preparar_base(generar_personas(), V, R)
     with pytest.raises(ValueError, match='Indicador no autorizado'):
         ejecutar_pipeline(df, 'otro', [], V, R)
+
+
+@pytest.mark.parametrize('indicador', ['participacion', 'ingreso', 'brecha'])
+def test_aceptacion_municipio_antes_del_calculo(indicador, monkeypatch):
+    import src.pipeline as pipeline
+    df, _ = preparar_base(generar_personas(), V, R)
+    def no_debe_ejecutarse(*args, **kwargs):
+        pytest.fail('StatEngine se ejecutó antes de bloquear la consulta')
+    monkeypatch.setattr(pipeline, 'participacion_laboral', no_debe_ejecutarse)
+    monkeypatch.setattr(pipeline, 'ingreso_laboral_medio', no_debe_ejecutarse)
+    with pytest.raises(DesagregacionNoAutorizada, match='municipio.*dominio de estudio'):
+        ejecutar_pipeline(df, indicador, ['municipio'], V, R)
+
+
+def test_aceptacion_brecha_sin_mujeres_mensaje():
+    df, _ = preparar_base(generar_personas(), V, R)
+    r, _ = ejecutar_pipeline(df, 'brecha', ['sexo'], V, R, {'sexo': ['Hombre']})
+    assert r['advertencia'].str.contains('falta uno de los grupos').all()
+    assert r[['valor', 'media_hombres', 'media_mujeres']].isna().all().all()
