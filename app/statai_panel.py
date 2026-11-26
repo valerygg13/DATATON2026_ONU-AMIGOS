@@ -7,7 +7,7 @@ from src.statshield.guardrails import DesagregacionNoAutorizada
 def mostrar_statai(df, variables, reglas, fuente, demo):
     st.header('Pregúntale a los datos')
     st.caption('StatAI · Asistente estadístico')
-    st.caption('Consultas en español mediante catálogo cerrado; no utiliza un LLM. Analiza la base completa, independientemente de los filtros del explorador.')
+    st.caption('Consultas en español mediante reconocimiento de intenciones y variantes lingüísticas controladas. No utiliza un LLM. Analiza la base completa, independientemente de los filtros del explorador.')
     st.caption('Datos sintéticos, no oficiales.' if demo else f'Archivo: {fuente}. Verifica su edición y procedencia.')
     with st.chat_message('assistant'):
         st.write('Hola. Puedo ayudarte a consultar participación laboral, ingresos y brechas entre hombres y mujeres.')
@@ -35,7 +35,7 @@ def mostrar_statai(df, variables, reglas, fuente, demo):
             st.error(f'Consulta bloqueada: {e}')
             return
         if salida is None:
-            st.warning('Pregunta fuera del catálogo. Selecciona un ejemplo o utiliza el explorador manual.')
+            st.warning('No pude identificar una consulta estadística compatible. Intenta reformular tu pregunta, selecciona un ejemplo o utiliza el explorador.')
             return
         c, r, by = salida
         st.write(c['descripcion'])

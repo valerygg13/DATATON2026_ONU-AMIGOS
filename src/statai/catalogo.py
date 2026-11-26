@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 import unicodedata
 from src.pipeline import ejecutar_pipeline
+from src.statai.interprete import interpretar_variantes
 
 
 def normalizar(texto):
@@ -25,13 +26,32 @@ CONSULTAS_PERMITIDAS = [
 BLOQUEADAS = [dict(id='bloqueada_'+dim, descripcion=f'¿Cuál es la brecha de ingresos por {dim}?', indicador='brecha', by=[dim], filtros={}, alias=[f'brecha de ingresos por {dim}']) for dim in ('municipio','departamento')]
 
 
+
 def interpretar_pregunta(pregunta: str) -> str | None:
-    """Solo acepta frases y variantes explícitas; no aproxima consultas ambiguas."""
+    """Reconoce consultas registradas y variantes controladas."""
+
     q = normalizar(pregunta)
+
+    # Prioridad a las consultas registradas y bloqueadas.
     for c in CONSULTAS_PERMITIDAS + BLOQUEADAS:
-        if q in {normalizar(t) for t in [c['descripcion'], *c['alias']]}:
+        if q in {
+            normalizar(t)
+            for t in [c['descripcion'], *c['alias']]
+        }:
             return c['id']
+
+    # Reconocimiento de variantes lingüísticas.
+    intencion = interpretar_variantes(q)
+
+    autorizadas = {
+        c['id'] for c in CONSULTAS_PERMITIDAS
+    }
+
+    if intencion in autorizadas:
+        return intencion
+
     return None
+
 
 
 def consultar(pregunta, df, variables, reglas):
