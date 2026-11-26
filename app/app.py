@@ -16,6 +16,7 @@ from src.pipeline import BaseNoValida, preparar_base, ejecutar_pipeline
 from statai_panel import mostrar_statai
 from src.fuentes import preparar_archivo, huella, MAX_BYTES
 from estilos import aplicar_estilos, encabezado, portada
+from pasaporte_panel import mostrar_pasaporte
 
 DEMO = 'Demo — datos sintéticos (no oficiales)'
 BASE_REFERENCIA = 'Base de datos Personas ENEIC I 2026.sav'
@@ -173,6 +174,10 @@ def explorador(df):
     st.dataframe(vista, hide_index=True, use_container_width=True,
                  column_config={UNIDADES[indicador]: st.column_config.NumberColumn(format='%.2f')})
     st.caption('Los casos son conteos de la muestra sin ponderar; no representan el total de personas del país.')
+    mostrar_pasaporte(tabla, indicador=indicador, nombre=nombre, fuente=fuente,
+                      perfil=perfil, variables=VARIABLES, reglas=REGLAS, filtros=filtros,
+                      solicitado=by, efectivo=efectivo, incidencias=incidencias, demo=demo,
+                      sha256=identidad_fuente.rsplit(':', 1)[-1] if subido else None)
 
 
 encabezado()
