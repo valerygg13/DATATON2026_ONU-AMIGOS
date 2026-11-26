@@ -123,7 +123,21 @@ participación laboral, 4/4 dominios coincidentes al redondear a dos decimales).
   confianza reales vía diseño muestral, historial multi-trimestre, y validación formal de nuevas
   ediciones antes de habilitarlas fuera del modo "exploratorio".
 
+## Entrega
+
+- **Presentación (PDF)**: `docs/presentacion/StatCoreGT_presentacion.pdf` (12 diapositivas;
+  versión editable en Canva, convertida desde este PDF).
+- **Guion de exposición en vivo** (7 min + 3 de preguntas ante el jurado):
+  `docs/guion_exposicion.md`.
+- **Guion del video demostrativo** (2-3 min, respaldo ante fallas técnicas):
+  `docs/guion_video.md`.
+- **Checklist de cumplimiento** verificado contra el lineamiento del Datatón:
+  `docs/cumplimiento.md`.
+
 ## Equipo y fases de trabajo
+
+Equipo ONU-AMIGOS: Valery Nicolle Gálvez García, Andrea Alejandra Pérez Sandoval, María
+Patricia Serrano Ramírez, Jorge Alejandro De León Batres.
 
 Ver [Issues](../../issues) y [Milestones](../../milestones) del repo — organizados según el cronograma del Datatón (23–27 nov 2026) y por rol: Datos, Estadística, Desarrollo web, Integración.
 
