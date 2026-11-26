@@ -98,6 +98,10 @@ with st.expander(f"Reporte DataGuard — {len(incidencias)} incidencia(s)", expa
     else:
         st.success("Sin incidencias: estructura, ponderador, códigos especiales, rangos y flags OK.")
 
+from statai_panel import mostrar_statai
+
+mostrar_statai(df, VARIABLES, REGLAS, fuente, fuente == DEMO)
+
 # --- Cálculo ---------------------------------------------------------------------------------
 try:
     resultado, by_efectivo = ejecutar_pipeline(df, indicador, by, VARIABLES, REGLAS, filtros)
