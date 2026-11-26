@@ -222,7 +222,7 @@ if not subido:
 if demo:
     st.warning('Modo demo · Datos sintéticos. Los resultados no representan a Guatemala.')
 else:
-    st.caption('Prototipo del Datatón; los cálculos no son publicaciones oficiales del INE.')
+    st.caption('Prototipo del Datatón.')
     if subido:
         st.info('Archivo aportado por el usuario; procedencia oficial no verificada.')
 try:
