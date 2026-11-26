@@ -1,0 +1,14 @@
+# Perfiles candidatos; 2025 tiene contraste de participación, no de ingresos.
+perfiles:
+  eneic_2025_t1:
+    edicion: 'I 2025'
+    periodo: {ANIO: 2025, TRIMESTRE: 2}
+    estado: experimental
+    decimales_referencia: 1
+    referencia_participacion: {Nacional: 65.6, Urbano Metropolitano: 68.0, Resto Urbano: 67.8, Rural Nacional: 62.6}
+  eneic_2026_t1:
+    edicion: 'I 2026'
+    periodo: {ANIO: 2026, TRIMESTRE: 6}
+    estado: activo
+    decimales_referencia: 2
+    referencia_participacion: {Nacional: 64.22, Urbano Metropolitano: 66.95, Resto Urbano: 65.48, Rural Nacional: 61.86}

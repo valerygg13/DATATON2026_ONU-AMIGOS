@@ -35,7 +35,7 @@ def generar_personas(n: int = 3000, semilla: int = 2026) -> pd.DataFrame:
     return pd.DataFrame(
         {
             "ANIO": 2026,
-            "TRIMESTRE": 1,
+            "TRIMESTRE": 6,
             "DOMINIO": dominio,
             "NUM_HOGAR": rng.integers(1, n // 4, n),
             "FACTOR": np.round(rng.uniform(150, 900, n), 4),

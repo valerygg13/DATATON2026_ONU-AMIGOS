@@ -9,8 +9,8 @@ from __future__ import annotations
 import pandas as pd
 
 MOTIVO_BLOQUEO = (
-    "El diseño muestral de ENEIC solo garantiza representatividad por dominio de estudio "
-    "(Urbano Metropolitano, Resto Urbano, Rural Nacional), sexo y área."
+    "La consulta está fuera de las reglas configuradas para ENEIC. Revise el dominio de estudio "
+    "y las dimensiones autorizadas (sexo, dominio y área). Su autorización no garantiza precisión muestral."
 )
 
 
@@ -32,10 +32,12 @@ def verificar_desagregacion(by: list[str], permitidas: list[str], bloqueadas: li
 
 def advertencia_tamano_muestral(n_no_ponderado: int, minimo: int) -> str | None:
     """Devuelve un mensaje de advertencia si n_no_ponderado < minimo, o None si está OK."""
+    if n_no_ponderado == 0:
+        return "No hay casos elegibles; no existe una estimación calculable."
     if n_no_ponderado < minimo:
         return (
             f"Solo {n_no_ponderado} casos no ponderados (mínimo {minimo}): "
-            "estimación imprecisa, interpretar con cautela."
+            "tamaño muestral reducido; interpretar con cautela. Precisión estadística no evaluada."
         )
     return None
 
@@ -54,8 +56,15 @@ def aplicar_statshield(
 
     salida = resultado.copy()
     salida["advertencia"] = [advertencia_tamano_muestral(int(n), minimo) for n in salida["n_no_ponderado"]]
+    if {"n_hombres", "n_mujeres"}.issubset(salida.columns):
+        falta_grupo = (salida["n_hombres"] == 0) | (salida["n_mujeres"] == 0)
+        salida.loc[falta_grupo, "advertencia"] = (
+            "No es posible calcular la brecha porque falta uno de los grupos de comparación con ingresos elegibles."
+        )
+        invalida = ~falta_grupo & salida["valor"].isna() & salida["advertencia"].isna()
+        salida.loc[invalida, "advertencia"] = "Brecha no calculable: revise las medias y el denominador."
     if suprimir_bajo_minimo:
-        bajo = salida["advertencia"].notna()
+        bajo = salida["n_no_ponderado"] < minimo
         salida.loc[bajo, "valor"] = float("nan")
         salida.loc[bajo, "advertencia"] += " Valor no publicado."
     return salida

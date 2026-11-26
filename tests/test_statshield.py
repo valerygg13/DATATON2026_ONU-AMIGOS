@@ -51,3 +51,8 @@ def test_aplicar_statshield_bloquea():
     r = pd.DataFrame({"valor": [0.1], "n_no_ponderado": [100]})
     with pytest.raises(DesagregacionNoAutorizada):
         aplicar_statshield(r, ["municipio"], REGLAS)
+
+
+def test_advertencia_no_confunde_tamano_con_precision():
+    assert 'Precisión estadística no evaluada' in advertencia_tamano_muestral(29, 30)
+    assert 'no existe una estimación calculable' in advertencia_tamano_muestral(0, 30)
