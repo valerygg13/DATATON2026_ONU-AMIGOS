@@ -1,6 +1,6 @@
 """Interfaz Streamlit de StatCore GT: filtros, resultados, exportación.
 
-Flujo (docs/contratos_modulos.md): DataGuard → StatEngine → StatShield → tabla + gráfico.
+Flujo (docs/contratos_modulos.md): DataGuard → StatShield → StatEngine → StatShield → tabla + gráfico.
 Ejecutar desde la raíz del repo: streamlit run app/app.py
 """
 
@@ -14,20 +14,11 @@ RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ))
 
 from src.config import cargar_config  # noqa: E402
-from src.dataguard.validators import cargar_base, ejecutar_dataguard  # noqa: E402
+from src.dataguard.validators import cargar_base  # noqa: E402
 from src.sintetico import generar_personas  # noqa: E402
-from src.statengine.indicadores import (  # noqa: E402
-    DIMENSIONES,
-    agregar_dimensiones,
-    brecha_relativa_ingreso,
-    ingreso_laboral_medio,
-    participacion_laboral,
-)
-from src.statshield.guardrails import (  # noqa: E402
-    DesagregacionNoAutorizada,
-    aplicar_statshield,
-    verificar_desagregacion,
-)
+from src.statengine.indicadores import DIMENSIONES  # noqa: E402
+from src.statshield.guardrails import DesagregacionNoAutorizada  # noqa: E402
+from src.pipeline import BaseNoValida, preparar_base, ejecutar_pipeline  # noqa: E402
 
 DEMO = "Demo — datos sintéticos (no oficiales)"
 INDICADORES = {
@@ -48,20 +39,7 @@ PONDERADOR = VARIABLES["base_personas"]["ponderador"]
 @st.cache_data(show_spinner="Cargando y validando la base (DataGuard)...")
 def preparar_datos(fuente: str):
     df = generar_personas() if fuente == DEMO else cargar_base(RAIZ / "data" / "raw" / fuente)
-    df_limpio, incidencias = ejecutar_dataguard(df, VARIABLES, REGLAS)
-    return agregar_dimensiones(df_limpio, VARIABLES), incidencias
-
-
-def calcular(df, indicador: str, by: list[str]):
-    """Devuelve (resultado con advertencias, by efectivo). Puede lanzar DesagregacionNoAutorizada."""
-    if indicador == "participacion":
-        return aplicar_statshield(participacion_laboral(df, PONDERADOR, by), by, REGLAS), by
-    if indicador == "ingreso":
-        return aplicar_statshield(ingreso_laboral_medio(df, PONDERADOR, by), by, REGLAS), by
-    otras = [d for d in by if d != "sexo"]
-    ingreso = ingreso_laboral_medio(df, PONDERADOR, ["sexo"] + otras)
-    brecha = brecha_relativa_ingreso(ingreso)
-    return aplicar_statshield(brecha, otras, REGLAS, suprimir_bajo_minimo=True), otras
+    return preparar_base(df, VARIABLES, REGLAS)
 
 
 st.title("StatCore GT")
@@ -76,7 +54,11 @@ with st.sidebar:
     fuente = st.selectbox(
         "Base Personas", archivos + [DEMO], help="Coloca la base Personas de ENEIC en data/raw/ (ver data/README.md)."
     )
-    df, incidencias = preparar_datos(fuente)
+    try:
+        df, incidencias = preparar_datos(fuente)
+    except BaseNoValida as e:
+        st.error(f"DataGuard bloqueó la base: {e}")
+        st.stop()
 
     st.header("Consulta")
     nombre_indicador = st.selectbox("Indicador", list(INDICADORES))
@@ -117,13 +99,8 @@ with st.expander(f"Reporte DataGuard — {len(incidencias)} incidencia(s)", expa
         st.success("Sin incidencias: estructura, ponderador, códigos especiales, rangos y flags OK.")
 
 # --- Cálculo ---------------------------------------------------------------------------------
-df_filtrado = df
-for dim, valores in filtros.items():
-    df_filtrado = df_filtrado[df_filtrado[dim].isin(valores)]
-
 try:
-    verificar_desagregacion(by, cruces["desagregaciones_permitidas"], cruces["desagregaciones_bloqueadas"])
-    resultado, by_efectivo = calcular(df_filtrado, indicador, by)
+    resultado, by_efectivo = ejecutar_pipeline(df, indicador, by, VARIABLES, REGLAS, filtros)
 except DesagregacionNoAutorizada as e:
     st.error(f"**StatShield bloqueó la consulta.** {e}")
     st.stop()
