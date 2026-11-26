@@ -1,5 +1,4 @@
 # Datos crudos (no versionar microdatos, son pesados y se descargan de ine.gob.gt)
-data/raw/*
 !data/raw/.gitkeep
 data/processed/*
 !data/processed/.gitkeep
